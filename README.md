@@ -1,6 +1,10 @@
 # wx2rss
 把微信公众号转成rss订阅源
 
+## Require
+
+> pip3 install requests_html
+
 ## Usage
 
 >  python3 wx2rss.py 公众号名
