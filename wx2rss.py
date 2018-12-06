@@ -6,14 +6,17 @@ import argparse
 import json
 import sys,traceback
 
-rss_template = '''
-<?xml version="1.0" encoding="UTF-8" ?>
+rss_template = '''<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0">
 <channel>
  <title>{title}</title>
  <description>{desc}</description>
  <link>{link}</link>
- <image>{image}</image>
+ <image>
+   <url>{image}</url>
+   <link>{link}</link>
+   <title>{title}></title>
+ </image>
 
  {items}
 </channel>
@@ -32,6 +35,10 @@ rss_item_template = '''
 
 class HTMLParseException(Exception):
     pass
+
+def wrap_cdata(s):
+    s.replace("]]>","]]]]><![CDATA[>")
+    return "<![CDATA[" + s + "]]>"
 
 def fetch_page(name):
     session = HTMLSession()
@@ -56,6 +63,7 @@ def parse_page_el(el):
 
 
 def parse_page(html):
+    print(html.url)
     title = html.find(".profile_nickname",first=True).text
     logo = html.find(".radius_avatar img",first=True).attrs["src"]
     desc = html.find(".profile_desc_value",first=True).text
@@ -67,9 +75,21 @@ def parse_page(html):
 def gen_rss(info):
     items = []
     for item in info["items"]:
-        items.append(rss_item_template.format(title=item["title"], desc=item["desc"], link=item["link"], guid=item["title"], 
-            pubdate=item["date"].strftime("%a, %d %b %Y %H:%M:%S %z")))
-    return rss_template.format(items = "".join(items), title=info["title"], desc=info["desc"], link=info["link"], image=info["logo"])
+        items.append(rss_item_template.format(
+            title = wrap_cdata(item["title"]), 
+            desc = wrap_cdata(item["desc"]), 
+            link = wrap_cdata(item["link"]), 
+            guid = wrap_cdata(item["title"]), 
+            pubdate = item["date"].strftime("%a, %d %b %Y %H:%M:%S %z")
+            ))
+
+    return rss_template.format(
+            items = "".join(items), 
+            title = wrap_cdata(info["title"]), 
+            desc = wrap_cdata(info["desc"]), 
+            link = wrap_cdata(info["link"]), 
+            image = wrap_cdata(info["logo"])
+            )
 
 def wx2rss(name):
     try:
