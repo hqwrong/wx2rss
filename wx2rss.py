@@ -56,10 +56,14 @@ def parse_page_el(el):
     if not title_el: raise HTMLParseException("no meui_media_title")
     title = title_el.text
     link = "http://mp.weixin.qq.com" + title_el.attrs["hrefs"]
-    desc = el.find(".weui_media_desc",first=True).text
+    # desc = el.find(".weui_media_desc",first=True).text
     ts = int(el.find(".weui_media_hd",first=True).attrs["data-t"][:10])
 
-    return {"title":title, "desc":desc, "link":link, "date": datetime.fromtimestamp(ts, timezone(timedelta(hours=8)))}
+    session = HTMLSession()
+    resp = session.get(link)
+    resp.raise_for_status()
+    resp.html.render()
+    return {"title":title, "desc":resp.html.html, "link":link, "date": datetime.fromtimestamp(ts, timezone(timedelta(hours=8)))}
 
 
 def parse_page(html):
