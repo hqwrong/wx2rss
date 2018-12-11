@@ -51,6 +51,15 @@ def fetch_page(name):
     resp.html.render()
     return resp.html
 
+def extract_content(link):
+    s = HTMLSession()
+    r= s.get(link)
+    r.raise_for_status()
+    r.html.render()
+
+    l = r.html.find("#page-content p, #page-content img")
+    return "\n".join([p.html for p in l])
+
 def parse_page_el(el):
     title_el = el.find(".weui_media_title",first=True)
     if not title_el: raise HTMLParseException("no meui_media_title")
@@ -59,7 +68,9 @@ def parse_page_el(el):
     desc = el.find(".weui_media_desc",first=True).text
     ts = int(el.find(".weui_media_hd",first=True).attrs["data-t"][:10])
 
-    return {"title":title, "desc":desc, "link":link, "date": datetime.fromtimestamp(ts, timezone(timedelta(hours=8)))}
+    content = extract_content(link)
+
+    return {"title":title, "desc":content, "link":link, "date": datetime.fromtimestamp(ts, timezone(timedelta(hours=8)))}
 
 
 def parse_page(html):
