@@ -2,6 +2,8 @@
 
 from requests_html import HTMLSession
 from datetime import datetime,timedelta,timezone
+from lxml.html import HtmlElement
+from lxml import etree
 import argparse
 import json
 import sys,traceback
@@ -55,10 +57,13 @@ def extract_content(link):
     s = HTMLSession()
     r= s.get(link)
     r.raise_for_status()
-    r.html.render()
 
-    l = r.html.find("#page-content p, #page-content img")
-    return "\n".join([p.html for p in l])
+    content = r.html.find("div#img-content", first=True)
+    for img in content.lxml.cssselect("img"):
+        if img.get("data-src") and not img.get("src"):
+            img.set("src", img.get("data-src") + "&amp;wxfrom=5&amp;wx_lazy=1")
+
+    return etree.tostring(content.lxml).decode("utf8")
 
 def parse_page_el(el):
     title_el = el.find(".weui_media_title",first=True)
